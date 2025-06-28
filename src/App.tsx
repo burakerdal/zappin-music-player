@@ -1,10 +1,14 @@
-import './App.css'
+// src/App.tsx
+import React from "react";
+import Player from "./Player";
 
 function App() {
-
   return (
-    <div>ZAPPIN Music Player</div>
-  )
+    <div style={{ padding: "2rem" }}>
+      <h1>ZAPPIN 🎧</h1>
+      <Player />
+    </div>
+  );
 }
 
-export default App
+export default App;
