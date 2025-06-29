@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import List from "./List";
 
 interface Song {
   songName: string;
@@ -8,11 +9,11 @@ interface Song {
 
 // Şarkı listesi örneği. Gerçek URL'leri buraya eklemelisiniz.
 // Eğer bir URL geçersizse (dosya yoksa), hata mesajı görünecektir.
-const songs: Song[] = [
-  { songName: "Song Title 1", artist: "Artist 1", url: "/songs/song1.mp3" },
-  { songName: "Song Title 2", artist: "Artist 2", url: "/songs/song2.mp3" },
-  { songName: "Invalid Song", artist: "Error Artist", url: "/nonexistent-song.mp3" }, // Hatalı URL testi için
-];
+// const songs: Song[] = [
+//   { songName: "Song Title 1", artist: "Artist 1", url: "/songs/song1.mp3" },
+//   { songName: "Song Title 2", artist: "Artist 2", url: "/songs/song2.mp3" },
+//   { songName: "Invalid Song", artist: "Error Artist", url: "/nonexistent-song.mp3" }, // Hatalı URL testi için
+// ];
 
 type Mode = "normal" | "short" | "long";
 
@@ -32,6 +33,9 @@ const Player: React.FC = () => {
   const [duration, setDuration] = useState(0);
   const [startTime, setStartTime] = useState(0);
   const [zapActive, setZapActive] = useState(false);
+  const [songs, setSongs] = useState<Song[] | []>([]);
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
 
   // const [isPaused, setIsPaused] = useState(false); // Bu state kullanılmıyor gibi duruyor
   const [isShuffle, setIsShuffle] = useState(false);
@@ -39,7 +43,6 @@ const Player: React.FC = () => {
   const sliceDuration = mode === "short" ? 15 : mode === "long" ? 45 : 0;
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
 
-  const currentSongs = songs;
 
   const clearTimers = () => {
     if (progressInterval.current) {
@@ -64,7 +67,7 @@ const Player: React.FC = () => {
         return (prev + 1) % songs.length;
       }
     });
-  }, [isShuffle]); // isShuffle değiştiğinde fonksiyon yenilenebilir
+  }, [isShuffle, songs]); // isShuffle değiştiğinde fonksiyon yenilenebilir
 
   // Hata durumunda çalışacak callback
   const handleAudioError = useCallback(() => {
@@ -76,7 +79,12 @@ const Player: React.FC = () => {
   // playCurrentSong fonksiyonu useCallback ile sarmalanmalı,
   // çünkü diğer useEffect'lerde bağımlılık olarak kullanılıyor.
   const playCurrentSong = useCallback(() => {
-    if (currentSongs.length === 0) {
+
+    
+
+    console.log(songs,"sngs")
+
+    if (songs.length === 0) {
       alert("Şarkı listesi boş");
       setIsPlaying(false);
       return;
@@ -87,7 +95,9 @@ const Player: React.FC = () => {
 
     clearTimers();
 
-    const song = currentSongs[currentIndex];
+    const song = songs[currentIndex];
+    console.log("songs ",songs)
+    console.log("SONG => ",song)
     if (song?.url === null || song?.url === "") {
       alert("Şarkı URL'i boş veya null");
       setIsPlaying(false);
@@ -97,7 +107,7 @@ const Player: React.FC = () => {
     // Önceki hata dinleyicisini temizlemek ve yenisini atamak için iyi bir yer.
     // Ancak handleError'ı useEffect içinde global olarak bir kere eklediğimiz için burada tekrar eklemeye gerek yok.
     // Sadece eski bir yüklü src'yi temizleyip, yeni src'yi atamak yeterli.
-    audio.src = song.url;
+    audio.src = song?.url;
     audio.load(); // Yükleme işlemini başlat
 
     audio.onloadedmetadata = () => {
@@ -114,6 +124,7 @@ const Player: React.FC = () => {
 
       // Küçük bir gecikme ile çalmayı başlat, bazen onloadedmetadata hemen currentTime set etmeyebilir
       setTimeout(() => {
+        audio.volume = isMuted ? 0 : volume;
         audio.play().then(() => {
           setIsPlaying(true); // Çalma başarılı olduğunda isPlaying'i ayarla
           progressInterval.current = setInterval(() => {
@@ -149,7 +160,7 @@ const Player: React.FC = () => {
         });
       }, 50); // Small timeout to ensure currentTime is set
     };
-  }, [currentIndex, mode, sliceDuration, zapActive, goNextSong, currentSongs]);
+  }, [currentIndex, mode, sliceDuration, zapActive, goNextSong, songs]);
 
   // Sadece bir kez Audio elementine hata dinleyicisini ekler
   useEffect(() => {
@@ -187,22 +198,42 @@ const Player: React.FC = () => {
     if (isPlaying) playCurrentSong();
   }, [mode, isPlaying, playCurrentSong]); // isPlaying ve playCurrentSong eklendi
 
-  const handleStart = () => {
+  const handleStartToggle = () => {
     setIsPlaying(true);
     setCurrentIndex(0); // İlk şarkıdan başla
     // playCurrentSong useEffect tarafından tetiklenecek
   };
 
-  const handleStop = () => {
-    setIsPlaying(false);
-    setProgress(0);
-    const audio = audioRef.current;
-    if (audio) {
-      audio.pause();
-      audio.currentTime = 0;
-    }
-    clearTimers();
-  };
+  // const handleStop = () => {
+  //   setIsPlaying(false);
+  //   setProgress(0);
+  //   const audio = audioRef.current;
+  //   if (audio) {
+  //     audio.pause();
+  //     audio.currentTime = 0;
+  //   }
+  //   clearTimers();
+  // };
+
+const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const vol = parseFloat(e.target.value);
+  setVolume(vol);
+  if (audioRef.current) {
+    audioRef.current.volume = vol;
+    setIsMuted(vol === 0);
+  }
+};
+
+const toggleMute = () => {
+  if (!audioRef.current) return;
+  if (isMuted) {
+    audioRef.current.volume = volume || 1;
+    setIsMuted(false);
+  } else {
+    audioRef.current.volume = 0;
+    setIsMuted(true);
+  }
+};
 
   const handleZapToggle = () => {
     const zapAudio = new Audio(zapActive ? "/effects/zappin-out.wav" : "/effects/zappin-in.wav");
@@ -265,10 +296,22 @@ const Player: React.FC = () => {
     audio.currentTime = Math.max(audio.currentTime - 5, 0);
   };
 
-  const currentSong = currentSongs[currentIndex];
+  const currentSong = songs[currentIndex];
   // Progress ve toplam uzunluk hesaplamaları
   const actualProgress = mode === "normal" ? progress : progress + startTime;
   const totalLength = audioRef.current?.duration || duration; // duration state'i metadata yüklenmeden önce 0 olabilir
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type === "audio/mpeg") {
+      const newSong: Song = {
+        songName: file.name,
+        artist: "Yüklenen Şarkı",
+        url: URL.createObjectURL(file),
+      };
+      setSongs((prev) => [...prev, newSong]);
+    }
+  };
 
   return (
     <div style={{ display: "flex", gap: "1rem" }}>
@@ -290,7 +333,6 @@ const Player: React.FC = () => {
         </div>
         {/* currentSong objesinin tanımlı olduğundan emin olun */}
         <h2>{currentSong ? currentSong.songName : "No Song Selected"}</h2>
-        <h4>{currentSong ? currentSong.artist : "No Artist"}</h4>
         <audio ref={audioRef} preload="auto" />
 
         <div style={{ margin: "1rem 0" }}>
@@ -307,7 +349,7 @@ const Player: React.FC = () => {
         <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem", flexWrap: "wrap" }}>
           <button className="music-player-button" onClick={handleSkipBackward}>⏪</button>
           <button className="music-player-button" onClick={handlePrevSong}>⏮️</button>
-          <button className="music-player-button" onClick={handlePauseToggle}>{isPlaying ? "⏸️" : "▶️"}</button>
+          <button className="music-player-button" onClick={isPlaying ? handlePauseToggle: handleStartToggle}>{isPlaying ? "⏸️" : "▶️"}</button>
           <button className="music-player-button" onClick={handleNextSong}>⏭️</button>
           <button className="music-player-button" onClick={handleSkipForward}>⏩</button>
           <button
@@ -322,7 +364,7 @@ const Player: React.FC = () => {
           </button>
           <button
             className={zapActive ? "music-player-button-active" : "music-player-button"}
-            onClick={handleZapToggle}>⚡</button>
+            onClick={handleZapToggle}>ZAP</button>
           <div style={zapActive ? { display: "flex", gap: "0.5rem" } : { display: "none" }}>
             {(["short", "long"] as Mode[]).map((m) => (
               <button
@@ -336,7 +378,63 @@ const Player: React.FC = () => {
             ))}
           </div>
         </div>
+        
+                
+                <div style={{ display:"flex", marginTop: "0.5rem", color: "white" }}>
+  <button
+    className="music-player-button-long"
+    onClick={toggleMute}
+    style={{ marginBottom: "0.5rem" }}
+  >
+    {isMuted || volume === 0 ? `🔇 ${Math.round((isMuted ? 0 : volume) * 100)}%`  : volume < 0.5 ? `🔉 ${Math.round((isMuted ? 0 : volume) * 100)}%` : `🔊 ${Math.round((isMuted ? 0 : volume) * 100)}%`} 
+  </button>
+  <div className="volume-bar">
+ <input
+    type="range"
+    min="0"
+    max="1"
+    step="0.01"
+    value={isMuted ? 0 : volume}
+    onChange={handleVolumeChange}
+    style={{ width: "100%", backgroundColor:"#1a1a1a" }}
+  />
+  </div>
+ 
+</div>
+                
+
       </div>
+      <div style={{marginTop:"1rem"}}>
+          <input id="upload-input" type="file" accept=".mp3" onChange={handleFileUpload} style={{ display:"none" }} />
+           <label htmlFor="upload-input" style={{ display:"flex", cursor: "pointer", marginLeft:"0.5rem" }}>
+           <img
+                    src="/icons/cloud-arrow-up-solid-white.svg"
+                    alt="Upload"
+                    style={{
+                    width: "20px",
+                    height: "20px",
+                    objectFit: "contain",
+                    backgroundColor: "#1a1a1a", 
+                    padding:"1rem",
+                    borderRadius:"8px"
+                    }}
+                    
+                />
+                <div style={{alignContent:"center", paddingInline:"0.5rem"}}> Upload your song </div>
+          </label>
+
+          {
+                  songs.length > 0 && <List
+                  songs={songs}
+                  currentIndex={currentIndex}
+                  onSelect={(index) => {
+                    setCurrentIndex(index);
+                    setIsPlaying(true); // Tıklanınca direkt çalsın
+                  }}
+                />}
+
+        </div>
+      
     </div>
   );
 };

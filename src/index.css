@@ -58,7 +58,7 @@ button:focus-visible {
   border-radius: 8px;
   border: 1px solid #1a1a1a;
   padding: 0.6em 1.2em;
-  font-size: 1em;
+  font-size: 0.9em;
   font-weight: 500;
   font-family: inherit;
   background-color: #1a1a1a;
@@ -73,7 +73,7 @@ button:focus-visible {
  border-radius: 8px;
   border: 1px solid #0000ff;
   padding: 0.6em 1.2em;
-  font-size: 1em;
+  font-size: 0.9em;
   font-weight: 500;
   font-family: inherit;
   background-color: #1a1a1a;
@@ -83,3 +83,57 @@ button:focus-visible {
   height: 2.6rem;
   color:#fff
 }
+.music-player-button-long {
+  border-radius: 8px;
+  border: 1px solid #1a1a1a;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+  width: 8.6rem;
+  height: 2.6rem;
+  color:#666
+
+}
+
+.volume-bar{
+  background-color: #1a1a1a;
+  align-content: center;
+  padding-inline: 5px;
+  height: 2.6rem;
+  border-radius: 8px;
+  margin-left: 0.4rem;
+  width: 7.8rem;
+}
+
+/* Scroll alanı */
+.custom-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: #555 #111; /* Firefox */
+  padding: 0.5rem;
+}
+
+/* Webkit (Chrome, Edge, Safari) */
+.custom-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+  background: #111; /* Arka plan */
+  border-radius: 10px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+  background-color: #444; /* Scroll tutacağı */
+  border-radius: 10px;
+  border: 2px solid #111; /* Kenar boşluğu için */
+}
+
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: #666;
+}
+
