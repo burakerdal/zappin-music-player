@@ -43,7 +43,6 @@ const Player: React.FC = () => {
   const sliceDuration = mode === "short" ? 15 : mode === "long" ? 45 : 0;
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
 
-
   const clearTimers = () => {
     if (progressInterval.current) {
       clearInterval(progressInterval.current);
@@ -71,7 +70,9 @@ const Player: React.FC = () => {
 
   // Hata durumunda çalışacak callback
   const handleAudioError = useCallback(() => {
-    alert("Şarkı yüklenirken bir hata oluştu. Lütfen URL'yi kontrol edin veya sonraki şarkıya geçin.");
+    alert(
+      "Şarkı yüklenirken bir hata oluştu. Lütfen URL'yi kontrol edin veya sonraki şarkıya geçin."
+    );
     setIsPlaying(false); // Hata durumunda çalmayı durdur
     clearTimers(); // Timers'ı temizle
   }, []); // Bağımlılığı yok, sadece bir kez oluşur
@@ -79,10 +80,6 @@ const Player: React.FC = () => {
   // playCurrentSong fonksiyonu useCallback ile sarmalanmalı,
   // çünkü diğer useEffect'lerde bağımlılık olarak kullanılıyor.
   const playCurrentSong = useCallback(() => {
-
-    
-
-    console.log(songs,"sngs")
 
     if (songs.length === 0) {
       alert("Şarkı listesi boş");
@@ -96,8 +93,6 @@ const Player: React.FC = () => {
     clearTimers();
 
     const song = songs[currentIndex];
-    console.log("songs ",songs)
-    console.log("SONG => ",song)
     if (song?.url === null || song?.url === "") {
       alert("Şarkı URL'i boş veya null");
       setIsPlaying(false);
@@ -117,7 +112,9 @@ const Player: React.FC = () => {
       setStartTime(st);
 
       const playDuration =
-        mode === "normal" ? fullDuration : Math.min(sliceDuration, fullDuration - st);
+        mode === "normal"
+          ? fullDuration
+          : Math.min(sliceDuration, fullDuration - st);
 
       setDuration(playDuration);
       setProgress(0);
@@ -125,39 +122,48 @@ const Player: React.FC = () => {
       // Küçük bir gecikme ile çalmayı başlat, bazen onloadedmetadata hemen currentTime set etmeyebilir
       setTimeout(() => {
         audio.volume = isMuted ? 0 : volume;
-        audio.play().then(() => {
-          setIsPlaying(true); // Çalma başarılı olduğunda isPlaying'i ayarla
-          progressInterval.current = setInterval(() => {
-            const now = audio.currentTime;
-            const elapsed = now - st;
-            setProgress(elapsed);
+        audio
+          .play()
+          .then(() => {
+            setIsPlaying(true); // Çalma başarılı olduğunda isPlaying'i ayarla
+            progressInterval.current = setInterval(() => {
+              const now = audio.currentTime;
+              const elapsed = now - st;
+              setProgress(elapsed);
 
-            // Şarkının bitiş kontrolü
-            if (
-              (mode !== "normal" && elapsed >= playDuration - 0.2) || // Slice modunda bitişe yakınsa
-              (mode === "normal" && now >= fullDuration - 0.2) // Normal modda bitişe yakınsa
-            ) {
-              audio.pause();
-              clearTimers();
+              // Şarkının bitiş kontrolü
+              if (
+                (mode !== "normal" && elapsed >= playDuration - 0.2) || // Slice modunda bitişe yakınsa
+                (mode === "normal" && now >= fullDuration - 0.2) // Normal modda bitişe yakınsa
+              ) {
+                audio.pause();
+                clearTimers();
 
-              if (zapActive) {
-                const transitionAudio = new Audio("/effects/transition-1.wav");
-                transitionAudio.play().catch(e => console.error("Geçiş sesi çalma hatası:", e)); // Hata yakalama
-                transitionAudio.onended = () => {
+                if (zapActive) {
+                  const transitionAudio = new Audio(
+                    "/effects/transition-1.wav"
+                  );
+                  transitionAudio
+                    .play()
+                    .catch((e) => console.error("Geçiş sesi çalma hatası:", e)); // Hata yakalama
+                  transitionAudio.onended = () => {
+                    goNextSong();
+                  };
+                } else {
                   goNextSong();
-                };
-              } else {
-                goNextSong();
+                }
               }
-            }
-          }, 200); // Progress update interval
-        }).catch(error => {
-          // audio.play() Promise'i tarafından yakalanan hatalar (örn. Autoplay engellendi)
-          console.error("Şarkı çalma hatası (play() Promise):", error);
-          // Kullanıcı etkileşimi olmadan otomatik oynatma engellenmiş olabilir
-          setIsPlaying(false);
-          alert("Şarkı otomatik olarak başlatılamadı. Oynatma düğmesine tıklamanız gerekebilir.");
-        });
+            }, 200); // Progress update interval
+          })
+          .catch((error) => {
+            // audio.play() Promise'i tarafından yakalanan hatalar (örn. Autoplay engellendi)
+            console.error("Şarkı çalma hatası (play() Promise):", error);
+            // Kullanıcı etkileşimi olmadan otomatik oynatma engellenmiş olabilir
+            setIsPlaying(false);
+            alert(
+              "Şarkı otomatik olarak başlatılamadı. Oynatma düğmesine tıklamanız gerekebilir."
+            );
+          });
       }, 50); // Small timeout to ensure currentTime is set
     };
   }, [currentIndex, mode, sliceDuration, zapActive, goNextSong, songs]);
@@ -167,11 +173,11 @@ const Player: React.FC = () => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    audio.addEventListener('error', handleAudioError);
+    audio.addEventListener("error", handleAudioError);
 
     // Bileşen unmount edildiğinde olay dinleyicisini kaldır
     return () => {
-      audio.removeEventListener('error', handleAudioError);
+      audio.removeEventListener("error", handleAudioError);
     };
   }, [handleAudioError]); // handleAudioError değiştiğinde (ki değişmemeli) tekrar ekler
 
@@ -188,7 +194,6 @@ const Player: React.FC = () => {
     // `playCurrentSong`'u doğrudan buraya eklememiz mantıksız olabilir.
     // Önceki `useEffect`'i [mode] bağımlılığıyla koruyup, bu `useEffect`i sadece `isPlaying` ve `currentIndex` yönetimi için kullanabiliriz.
   }, [currentIndex, isPlaying, playCurrentSong]);
-
 
   useEffect(() => {
     if (mode === "normal") setStartTime(0);
@@ -215,35 +220,39 @@ const Player: React.FC = () => {
   //   clearTimers();
   // };
 
-const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const vol = parseFloat(e.target.value);
-  setVolume(vol);
-  if (audioRef.current) {
-    audioRef.current.volume = vol;
-    setIsMuted(vol === 0);
-  }
-};
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const vol = parseFloat(e.target.value);
+    setVolume(vol);
+    if (audioRef.current) {
+      audioRef.current.volume = vol;
+      setIsMuted(vol === 0);
+    }
+  };
 
-const toggleMute = () => {
-  if (!audioRef.current) return;
-  if (isMuted) {
-    audioRef.current.volume = volume || 1;
-    setIsMuted(false);
-  } else {
-    audioRef.current.volume = 0;
-    setIsMuted(true);
-  }
-};
+  const toggleMute = () => {
+    if (!audioRef.current) return;
+    if (isMuted) {
+      audioRef.current.volume = volume || 1;
+      setIsMuted(false);
+    } else {
+      audioRef.current.volume = 0;
+      setIsMuted(true);
+    }
+  };
 
   const handleZapToggle = () => {
-    const zapAudio = new Audio(zapActive ? "/effects/zappin-out.wav" : "/effects/zappin-in.wav");
-    zapAudio.play().catch(e => console.error("Zap sesi çalma hatası:", e)); // Hata yakalama
+    const zapAudio = new Audio(
+      zapActive ? "/effects/zappin-out.wav" : "/effects/zappin-in.wav"
+    );
+    zapAudio.play().catch((e) => console.error("Zap sesi çalma hatası:", e)); // Hata yakalama
     setZapActive((prev) => !prev);
     // Eğer zapActive false ise (yani açılıyorsa) moda "short" olarak ayarla,
     // yoksa (kapanıyorsa) "normal" moda dön.
-    if (!zapActive) { // Şu an aktif değilse, yani açılıyor
+    if (!zapActive) {
+      // Şu an aktif değilse, yani açılıyor
       setMode("short");
-    } else { // Şu an aktifse, yani kapanıyor
+    } else {
+      // Şu an aktifse, yani kapanıyor
       setMode("normal");
     }
   };
@@ -253,10 +262,13 @@ const toggleMute = () => {
     if (!audio) return;
 
     if (audio.paused) {
-      audio.play().then(() => setIsPlaying(true)).catch(error => {
-        console.error("Çalma düğmesiyle başlatma hatası:", error);
-        alert("Şarkı başlatılamadı. Tarayıcı ayarlarınızı kontrol edin.");
-      });
+      audio
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch((error) => {
+          console.error("Çalma düğmesiyle başlatma hatası:", error);
+          alert("Şarkı başlatılamadı. Tarayıcı ayarlarınızı kontrol edin.");
+        });
     } else {
       audio.pause();
       setIsPlaying(false);
@@ -269,7 +281,9 @@ const toggleMute = () => {
 
     if (zapActive) {
       const transitionAudio = new Audio("/effects/transition-1.wav");
-      transitionAudio.play().catch(e => console.error("Geçiş sesi çalma hatası:", e)); // Hata yakalama
+      transitionAudio
+        .play()
+        .catch((e) => console.error("Geçiş sesi çalma hatası:", e)); // Hata yakalama
       transitionAudio.onended = () => {
         goNextSong();
       };
@@ -315,7 +329,15 @@ const toggleMute = () => {
 
   return (
     <div style={{ display: "flex", gap: "1rem" }}>
-      <div style={{ width: "400px", backgroundColor: "black", padding: "1rem", borderRadius: "16px", lineHeight: "1.2" }}>
+      <div
+        style={{
+          width: "400px",
+          backgroundColor: "black",
+          padding: "1rem",
+          borderRadius: "16px",
+          lineHeight: "1.2",
+        }}
+      >
         <div>
           <img
             src="/icons/musical-note-128.png"
@@ -346,95 +368,144 @@ const toggleMute = () => {
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem", flexWrap: "wrap" }}>
-          <button className="music-player-button" onClick={handleSkipBackward}>⏪</button>
-          <button className="music-player-button" onClick={handlePrevSong}>⏮️</button>
-          <button className="music-player-button" onClick={isPlaying ? handlePauseToggle: handleStartToggle}>{isPlaying ? "⏸️" : "▶️"}</button>
-          <button className="music-player-button" onClick={handleNextSong}>⏭️</button>
-          <button className="music-player-button" onClick={handleSkipForward}>⏩</button>
+        <div
+          style={{
+            display: "flex",
+            gap: "0.5rem",
+            marginTop: "1rem",
+            flexWrap: "wrap",
+          }}
+        >
+          <button className="music-player-button" onClick={handleSkipBackward}>
+            ⏪
+          </button>
+          <button className="music-player-button" onClick={handlePrevSong}>
+            ⏮️
+          </button>
           <button
-            className={isShuffle ? "music-player-button-active" : "music-player-button"}
+            className="music-player-button"
+            onClick={isPlaying ? handlePauseToggle : handleStartToggle}
+          >
+            {isPlaying ? "⏸️" : "▶️"}
+          </button>
+          <button className="music-player-button" onClick={handleNextSong}>
+            ⏭️
+          </button>
+          <button className="music-player-button" onClick={handleSkipForward}>
+            ⏩
+          </button>
+          <button
+            className={
+              isShuffle ? "music-player-button-active" : "music-player-button"
+            }
             onClick={() => {
               setIsShuffle((prev) => !prev);
               const transitionAudio2 = new Audio("/effects/transition-2.wav");
-              transitionAudio2.play().catch(e => console.error("Shuffle sesi çalma hatası:", e)); // Hata yakalama
+              transitionAudio2
+                .play()
+                .catch((e) => console.error("Shuffle sesi çalma hatası:", e)); // Hata yakalama
             }}
           >
             🔀
           </button>
           <button
-            className={zapActive ? "music-player-button-active" : "music-player-button"}
-            onClick={handleZapToggle}>ZAP</button>
-          <div style={zapActive ? { display: "flex", gap: "0.5rem" } : { display: "none" }}>
+            className={
+              zapActive ? "music-player-button-active" : "music-player-button"
+            }
+            onClick={handleZapToggle}
+          >
+            ZAP
+          </button>
+          <div
+            style={
+              zapActive
+                ? { display: "flex", gap: "0.5rem" }
+                : { display: "none" }
+            }
+          >
             {(["short", "long"] as Mode[]).map((m) => (
               <button
                 key={m}
                 onClick={() => setMode(m)}
                 disabled={!zapActive}
-                className={mode === m ? "music-player-button-active" : "music-player-button"}
+                className={
+                  mode === m
+                    ? "music-player-button-active"
+                    : "music-player-button"
+                }
               >
                 {m === "short" ? "15s" : "45s"}
               </button>
             ))}
           </div>
         </div>
-        
-                
-                <div style={{ display:"flex", marginTop: "0.5rem", color: "white" }}>
-  <button
-    className="music-player-button-long"
-    onClick={toggleMute}
-    style={{ marginBottom: "0.5rem" }}
-  >
-    {isMuted || volume === 0 ? `🔇 ${Math.round((isMuted ? 0 : volume) * 100)}%`  : volume < 0.5 ? `🔉 ${Math.round((isMuted ? 0 : volume) * 100)}%` : `🔊 ${Math.round((isMuted ? 0 : volume) * 100)}%`} 
-  </button>
-  <div className="volume-bar">
- <input
-    type="range"
-    min="0"
-    max="1"
-    step="0.01"
-    value={isMuted ? 0 : volume}
-    onChange={handleVolumeChange}
-    style={{ width: "100%", backgroundColor:"#1a1a1a" }}
-  />
-  </div>
- 
-</div>
-                
 
-      </div>
-      <div style={{marginTop:"1rem"}}>
-          <input id="upload-input" type="file" accept=".mp3" onChange={handleFileUpload} style={{ display:"none" }} />
-           <label htmlFor="upload-input" style={{ display:"flex", cursor: "pointer", marginLeft:"0.5rem" }}>
-           <img
-                    src="/icons/cloud-arrow-up-solid-white.svg"
-                    alt="Upload"
-                    style={{
-                    width: "20px",
-                    height: "20px",
-                    objectFit: "contain",
-                    backgroundColor: "#1a1a1a", 
-                    padding:"1rem",
-                    borderRadius:"8px"
-                    }}
-                    
-                />
-                <div style={{alignContent:"center", paddingInline:"0.5rem"}}> Upload your song </div>
-          </label>
-
-          {
-                  songs.length > 0 && <List
-                  songs={songs}
-                  currentIndex={currentIndex}
-                  onSelect={(index) => {
-                    setCurrentIndex(index);
-                    setIsPlaying(true); // Tıklanınca direkt çalsın
-                  }}
-                />}
-
+        <div style={{ display: "flex", marginTop: "0.5rem", color: "white" }}>
+          <button
+            className="music-player-button-long"
+            onClick={toggleMute}
+            style={{ marginBottom: "0.5rem" }}
+          >
+            {isMuted || volume === 0
+              ? `🔇 ${Math.round((isMuted ? 0 : volume) * 100)}%`
+              : volume < 0.5
+              ? `🔉 ${Math.round((isMuted ? 0 : volume) * 100)}%`
+              : `🔊 ${Math.round((isMuted ? 0 : volume) * 100)}%`}
+          </button>
+          <div className="volume-bar">
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={isMuted ? 0 : volume}
+              onChange={handleVolumeChange}
+              style={{ width: "100%", backgroundColor: "#1a1a1a" }}
+            />
+          </div>
         </div>
-      
+      </div>
+      <div style={{ marginTop: "1rem" }}>
+        <input
+          id="upload-input"
+          type="file"
+          accept=".mp3"
+          onChange={handleFileUpload}
+          style={{ display: "none" }}
+        />
+        <label
+          htmlFor="upload-input"
+          style={{ display: "flex", cursor: "pointer", marginLeft: "0.5rem" }}
+        >
+          <img
+            src="/icons/cloud-arrow-up-solid-white.svg"
+            alt="Upload"
+            style={{
+              width: "20px",
+              height: "20px",
+              objectFit: "contain",
+              backgroundColor: "#1a1a1a",
+              padding: "1rem",
+              borderRadius: "8px",
+            }}
+          />
+          <div style={{ alignContent: "center", paddingInline: "0.5rem" }}>
+            {" "}
+            Upload your song{" "}
+          </div>
+        </label>
+
+        {songs.length > 0 && (
+          <List
+            songs={songs}
+            currentIndex={currentIndex}
+            onSelect={(index) => {
+              setCurrentIndex(index);
+              setIsPlaying(true); // Tıklanınca direkt çalsın
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 };
