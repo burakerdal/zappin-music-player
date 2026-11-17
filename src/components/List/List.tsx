@@ -1,10 +1,5 @@
 import React from "react";
-
-interface Song {
-  title: string;
-  url: string;
-  // İstersen diğer alanlar da eklenebilir (örneğin cover, duration)
-}
+import type { Song } from "../../types/player";
 
 interface ListProps {
   songs: Song[] | [];
@@ -14,7 +9,7 @@ interface ListProps {
 
 const List: React.FC<ListProps> = ({ songs, currentIndex, onSelect }) => {
   return (
-    <div className="custom-scroll" style={{ maxHeight: "350px" }}>
+    <div className="custom-scroll" style={{ maxHeight: "350px", width: "700px" }}>
         <ul style={{ listStyle: "none", padding: 0}}>
         {songs.map((song, index) => (
             <li
@@ -41,8 +36,8 @@ const List: React.FC<ListProps> = ({ songs, currentIndex, onSelect }) => {
                     }}
                     
                 />
-                <div style={{}}>
-                    <div style={{fontSize:"18px", fontWeight:"bold"}}>{song.songName}</div>
+                <div style={{display: "flex", alignItems: "center"}}>
+                    <div style={{fontSize:"16px", fontWeight:"bold", textWrap: "nowrap", alignItems: "center"}}>{song.songName}</div>
                 </div>
             </div>
             </li>
